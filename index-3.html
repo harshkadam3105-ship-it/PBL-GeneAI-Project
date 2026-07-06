@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GeneRx AI — Precision Medicine Dashboard</title>
+<style>
+  :root{
+    --navy:#0d1b3d;
+    --navy-2:#14265a;
+    --blue:#2f6df6;
+    --blue-light:#e8f0fe;
+    --green:#1aa971;
+    --amber:#e8a316;
+    --red:#e0453f;
+    --purple:#8b5cf6;
+    --bg:#f4f6fb;
+    --card:#ffffff;
+    --text:#1a2138;
+    --muted:#6b7280;
+    --border:#e7eaf3;
+    --radius:14px;
+  }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'Segoe UI',system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);}
+  a{text-decoration:none;color:inherit;}
+
+  /* Layout */
+  .app{display:flex;min-height:100vh;}
+  .sidebar{
+    width:250px;flex-shrink:0;background:var(--navy);color:#cfd6ea;
+    display:flex;flex-direction:column;padding:22px 16px;position:sticky;top:0;height:100vh;
+  }
+  .brand{display:flex;align-items:center;gap:10px;color:#fff;font-weight:700;font-size:1.15rem;padding:0 6px 4px;}
+  .brand .dna{font-size:1.4rem;}
+  .brand span.ai{color:#7ea2ff;}
+  .tagline{font-size:.72rem;color:#8b94b8;padding:0 6px 22px;border-bottom:1px solid #223066;margin-bottom:14px;}
+  nav{display:flex;flex-direction:column;gap:3px;flex:1;}
+  nav button{
+    all:unset;cursor:pointer;display:flex;align-items:center;gap:12px;padding:10px 12px;border-radius:10px;
+    font-size:.92rem;color:#c3cae6;
+  }
+  nav button:hover{background:#1a2a5e;}
+  nav button.active{background:var(--blue);color:#fff;font-weight:600;}
+  .icon{width:18px;text-align:center;}
+  .sidebar-footer{
+    margin-top:auto;background:#132152;border:1px solid #24356e;border-radius:14px;padding:18px 14px;text-align:center;
+  }
+  .sidebar-footer .lock{font-size:1.6rem;margin-bottom:8px;}
+  .sidebar-footer h4{margin:0 0 4px;color:#fff;font-size:.95rem;}
+  .sidebar-footer p{margin:0 0 12px;font-size:.75rem;color:#9aa4c9;line-height:1.4;}
+  .sidebar-footer button{
+    all:unset;cursor:pointer;background:var(--blue);color:#fff;padding:8px 16px;border-radius:20px;font-size:.8rem;font-weight:600;
+  }
+
+  main{flex:1;padding:26px 32px;max-width:1400px;}
+  header.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:22px;flex-wrap:wrap;gap:12px;}
+  header.top h1{margin:0 0 4px;font-size:1.6rem;}
+  header.top p.sub{margin:0;color:var(--muted);font-size:.92rem;}
+  .top-right{display:flex;align-items:center;gap:16px;}
+  .bell{position:relative;font-size:1.2rem;}
+  .bell .dot{position:absolute;top:-4px;right:-6px;background:var(--red);color:#fff;font-size:.6rem;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;}
+  .user{display:flex;align-items:center;gap:10px;}
+  .avatar{width:36px;height:36px;border-radius:50%;background:#dbe3f7;display:flex;align-items:center;justify-content:center;font-size:1.1rem;}
+  .user .name{font-weight:700;font-size:.88rem;}
+  .user .role{font-size:.72rem;color:var(--muted);}
+
+  .grid-4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-bottom:22px;}
+  .grid-3{display:grid;grid-template-columns:1.1fr 1.4fr 1fr;gap:18px;margin-bottom:22px;align-items:start;}
+  @media(max-width:1100px){.grid-4{grid-template-columns:repeat(2,1fr);}.grid-3{grid-template-columns:1fr;}}
+
+  .card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:20px;}
+  .stat-card{display:flex;flex-direction:column;gap:10px;}
+  .stat-top{display:flex;align-items:center;gap:12px;}
+  .stat-icon{width:44px;height:44px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;}
+  .stat-label{font-size:.85rem;color:var(--muted);margin:0;}
+  .stat-value{font-size:1.6rem;font-weight:700;margin:2px 0 0;}
+  .stat-foot{font-size:.78rem;color:var(--muted);display:flex;justify-content:space-between;align-items:center;}
+  .stat-foot.up{color:var(--green);}
+  .stat-foot.down{color:var(--red);}
+
+  h3.card-title{margin:0 0 4px;font-size:1.05rem;display:flex;align-items:center;gap:8px;}
+  p.card-sub{margin:0 0 14px;color:var(--muted);font-size:.82rem;}
+
+  .step{display:flex;align-items:center;gap:12px;padding:12px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;cursor:pointer;transition:.15s;}
+  .step:hover{border-color:var(--blue);background:var(--blue-light);}
+  .step .num{width:32px;height:32px;border-radius:8px;background:var(--blue-light);color:var(--blue);display:flex;align-items:center;justify-content:center;font-weight:700;}
+  .step .t strong{display:block;font-size:.88rem;}
+  .step .t span{font-size:.78rem;color:var(--muted);}
+  .btn-primary{all:unset;box-sizing:border-box;display:block;width:100%;text-align:center;background:var(--blue);color:#fff;padding:13px;border-radius:10px;font-weight:700;cursor:pointer;margin-top:6px;}
+  .btn-primary:hover{background:#2158d6;}
+
+  table{width:100%;border-collapse:collapse;font-size:.86rem;}
+  th{text-align:left;color:var(--muted);font-weight:600;padding:8px 6px;border-bottom:1px solid var(--border);}
+  td{padding:10px 6px;border-bottom:1px solid var(--border);}
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:.82rem;}
+  .dot-status{width:8px;height:8px;border-radius:50%;}
+  .good{background:var(--green);} .mod{background:var(--amber);} .poor{background:var(--red);}
+  .view-all{font-size:.85rem;color:var(--blue);font-weight:600;}
+
+  .factor{margin-bottom:12px;}
+  .factor-top{display:flex;justify-content:space-between;font-size:.85rem;margin-bottom:5px;}
+  .bar-bg{background:#eef1f8;border-radius:6px;height:8px;overflow:hidden;}
+  .bar-fill{background:var(--blue);height:100%;border-radius:6px;}
+  .shap-note{font-size:.75rem;color:var(--muted);margin-top:10px;}
+
+  .overview{display:grid;grid-template-columns:repeat(6,1fr);gap:16px;}
+  @media(max-width:1100px){.overview{grid-template-columns:repeat(3,1fr);}}
+  @media(max-width:600px){.overview{grid-template-columns:repeat(2,1fr);}}
+  .ov-item{display:flex;gap:10px;align-items:flex-start;}
+  .ov-item .oi{font-size:1.3rem;}
+  .ov-item strong{display:block;font-size:.85rem;}
+  .ov-item span{font-size:.8rem;color:var(--muted);}
+
+  .disclaimer{background:#eef3ff;border:1px solid #d6e2fb;border-radius:12px;padding:14px 18px;font-size:.85rem;color:#33405f;margin-top:22px;}
+
+  /* Views */
+  .view{display:none;}
+  .view.active{display:block;}
+
+  /* New Prediction form */
+  .form-card{max-width:760px;}
+  .field{margin-bottom:16px;}
+  .field label{display:block;font-size:.85rem;font-weight:600;margin-bottom:6px;}
+  .field input, .field select, .field textarea{
+    width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-size:.9rem;font-family:inherit;background:#fbfcff;
+  }
+  .field textarea{min-height:80px;resize:vertical;}
+  .chip-row{display:flex;flex-wrap:wrap;gap:8px;}
+  .chip{border:1px solid var(--border);border-radius:20px;padding:6px 14px;font-size:.82rem;cursor:pointer;background:#fff;}
+  .chip.selected{background:var(--blue);color:#fff;border-color:var(--blue);}
+  .result-card{margin-top:20px;}
+  .rx-item{border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:14px;}
+  .rx-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;}
+  .rx-head strong{font-size:1rem;}
+  .conf{font-size:.78rem;background:var(--blue-light);color:var(--blue);padding:3px 10px;border-radius:20px;font-weight:700;}
+  .rx-sub{font-size:.82rem;color:var(--muted);margin-bottom:12px;}
+  .price-table td.best{color:var(--green);font-weight:700;}
+  .badge-best{background:#e6f7ee;color:var(--green);font-size:.7rem;padding:2px 8px;border-radius:20px;font-weight:700;margin-left:6px;}
+
+  .placeholder{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;color:var(--muted);text-align:center;}
+  .placeholder .pi{font-size:2.4rem;margin-bottom:10px;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="brand"><span class="dna">🧬</span> GeneRx <span class="ai">AI</span></div>
+    <div class="tagline">Precision Medicine, Powered by AI</div>
+    <nav id="nav">
+      <button class="nav-btn active" data-view="home"><span class="icon">🏠</span> Home</button>
+      <button class="nav-btn" data-view="predict"><span class="icon">➕</span> New Prediction</button>
+      <button class="nav-btn" data-view="history"><span class="icon">🗂️</span> Patient History</button>
+      <button class="nav-btn" data-view="drugs"><span class="icon">💊</span> Drug Database</button>
+      <button class="nav-btn" data-view="research"><span class="icon">📊</span> Research Dashboard</button>
+      <button class="nav-btn" data-view="reports"><span class="icon">📄</span> Reports</button>
+      <button class="nav-btn" data-view="settings"><span class="icon">⚙️</span> Settings</button>
+      <button class="nav-btn" data-view="about"><span class="icon">ℹ️</span> About Us</button>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="lock">🛡️</div>
+      <h4>AI-Powered Pharmacogenomics</h4>
+      <p>Smarter Predictions. Better Outcomes.</p>
+      <button onclick="showView('about')">Learn More</button>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+
+    <header class="top">
+      <div>
+        <h1 id="pageTitle">Welcome, Dr. Harsh Kadam 👋</h1>
+        <p class="sub" id="pageSub">Here's what's happening with your system today.</p>
+      </div>
+      <div class="top-right">
+        <div class="bell">🔔<span class="dot">3</span></div>
+        <div class="user">
+          <div class="avatar">👤</div>
+          <div>
+            <div class="name">Dr. Harsh Kadam</div>
+            <div class="role">Administrator</div>
+          </div>
+        </div>
+      </div>
+    </header>
+
+    <!-- HOME VIEW -->
+    <section class="view active" id="view-home">
+      <div class="grid-4">
+        <div class="card stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:#e8f0fe;">👥</div></div>
+          <p class="stat-label">Patients Analyzed</p>
+          <p class="stat-value">128</p>
+          <div class="stat-foot up">↑ 12% this week <span>Total patients</span></div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:#e6f7ee;">📋</div></div>
+          <p class="stat-label">Predictions Today</p>
+          <p class="stat-value">15</p>
+          <div class="stat-foot up">↑ 7% vs yesterday</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:#f1ecfe;">🎯</div></div>
+          <p class="stat-label">Model Accuracy</p>
+          <p class="stat-value">92.4%</p>
+          <div class="stat-foot up">↑ 2.1% this week</div>
+        </div>
+        <div class="card stat-card">
+          <div class="stat-top"><div class="stat-icon" style="background:#fdeee6;">⚠️</div></div>
+          <p class="stat-label">High Risk Alerts</p>
+          <p class="stat-value">3</p>
+          <div class="stat-foot down">↓ 1 vs yesterday <span>Requires attention</span></div>
+        </div>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3 class="card-title">➕ Quick Prediction</h3>
+          <p class="card-sub">Start a new prediction for a patient.</p>
+          <div class="step" onclick="showView('predict')"><div class="num">1</div><div class="t"><strong>Patient Information</strong><span>Enter demographic and clinical details</span></div></div>
+          <div class="step" onclick="showView('predict')"><div class="num">2</div><div class="t"><strong>Symptoms & Reports</strong><span>Add symptoms and lab/report values</span></div></div>
+          <div class="step" onclick="showView('predict')"><div class="num">3</div><div class="t"><strong>Select Drug Class</strong><span>Choose condition to evaluate</span></div></div>
+          <div class="step" onclick="showView('predict')"><div class="num">4</div><div class="t"><strong>Get AI Prediction</strong><span>View suggested drugs & best prices</span></div></div>
+          <button class="btn-primary" onclick="showView('predict')">＋ New Prediction</button>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">🕒 Recent Predictions</h3>
+          <table>
+            <thead><tr><th>Patient</th><th>Condition</th><th>Prediction</th><th>Date</th></tr></thead>
+            <tbody id="recentTable"></tbody>
+          </table>
+        </div>
+
+        <div class="card">
+          <h3 class="card-title">📈 Top Important Factors</h3>
+          <p class="card-sub">(From recent predictions)</p>
+          <div id="factors"></div>
+          <p class="shap-note">Powered by SHAP ⓘ</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3 class="card-title">📊 System Overview</h3>
+        <div class="overview">
+          <div class="ov-item"><span class="oi">🗄️</span><div><strong>Dataset</strong><span>Synthetic + Real</span></div></div>
+          <div class="ov-item"><span class="oi">🧩</span><div><strong>Models Used</strong><span>LR, DT, RF, SVM</span></div></div>
+          <div class="ov-item"><span class="oi">⭐</span><div><strong>Best Model</strong><span>Random Forest (92.4%)</span></div></div>
+          <div class="ov-item"><span class="oi">🛡️</span><div><strong>Explainability</strong><span>SHAP</span></div></div>
+          <div class="ov-item"><span class="oi">📄</span><div><strong>Reports Generated</strong><span>46 this month</span></div></div>
+          <div class="ov-item"><span class="oi">📅</span><div><strong>Last Updated</strong><span id="lastUpdated"></span></div></div>
+        </div>
+      </div>
+
+      <div class="disclaimer">ⓘ <strong>Disclaimer:</strong> This tool is intended to support clinical decision-making and not to replace professional medical judgment.</div>
+    </section>
+
+    <!-- NEW PREDICTION VIEW -->
+    <section class="view" id="view-predict">
+      <div class="card form-card">
+        <h3 class="card-title">➕ New Prediction</h3>
+        <p class="card-sub">Enter symptoms/condition to get suggested medicines and price comparison across brands.</p>
+
+        <div class="field">
+          <label>Patient Name</label>
+          <input type="text" id="patientName" placeholder="e.g. Rahul Sharma">
+        </div>
+
+        <div class="field">
+          <label>Select Condition / Symptom Group</label>
+          <div class="chip-row" id="conditionChips"></div>
+        </div>
+
+        <div class="field">
+          <label>Additional Notes / Report Values (optional)</label>
+          <textarea id="notes" placeholder="e.g. BP 150/95, mild fever, allergy to penicillin"></textarea>
+        </div>
+
+        <button class="btn-primary" onclick="runPrediction()">🔍 Get AI Prediction</button>
+      </div>
+
+      <div id="predictionResult"></div>
+    </section>
+
+    <!-- PLACEHOLDER VIEWS -->
+    <section class="view" id="view-history"><div class="card placeholder"><div class="pi">🗂️</div><h3>Patient History</h3><p>Patient records and past predictions will appear here once connected to a database (Firebase/Firestore recommended).</p></div></section>
+    <section class="view" id="view-drugs"><div class="card placeholder"><div class="pi">💊</div><h3>Drug Database</h3><p>Full searchable drug & brand price database — populate via the NPPA / Jan Aushadhi data pipeline.</p></div></section>
+    <section class="view" id="view-research"><div class="card placeholder"><div class="pi">📊</div><h3>Research Dashboard</h3><p>Model performance, dataset stats, and research notes go here.</p></div></section>
+    <section class="view" id="view-reports"><div class="card placeholder"><div class="pi">📄</div><h3>Reports</h3><p>Generated PDF/CSV prescription reports will be listed here.</p></div></section>
+    <section class="view" id="view-settings"><div class="card placeholder"><div class="pi">⚙️</div><h3>Settings</h3><p>Account, model, and data-source configuration.</p></div></section>
+    <section class="view" id="view-about"><div class="card placeholder"><div class="pi">ℹ️</div><h3>About GeneRx AI</h3><p>An AI-assisted pharmacogenomics & prescribing support tool. Built to help doctors evaluate drug options and compare prices across manufacturers — always alongside clinical judgment, never replacing it.</p></div></section>
+
+  </main>
+</div>
+
+<script>
+/* ---------- MOCK DATA (replace with real API/Firestore later) ---------- */
+const recent = [
+  {patient:"Rahul Sharma", drug:"Warfarin", status:"good", date:"May 28, 2025"},
+  {patient:"Priya Verma", drug:"Clopidogrel", status:"mod", date:"May 28, 2025"},
+  {patient:"Amit Singh", drug:"Codeine", status:"poor", date:"May 28, 2025"},
+  {patient:"Neha Gupta", drug:"Simvastatin", status:"good", date:"May 27, 2025"},
+  {patient:"Vikram Mehta", drug:"Tacrolimus", status:"mod", date:"May 27, 2025"},
+];
+const statusLabel = {good:"Good Response", mod:"Moderate Response", poor:"Poor Response"};
+
+const factors = [
+  {name:"CYP2C9", pct:28},
+  {name:"CYP2D6", pct:23},
+  {name:"Age", pct:18},
+  {name:"CYP3A4", pct:12},
+  {name:"Weight", pct:8},
+  {name:"Others", pct:11},
+];
+
+// Symptom/condition -> generic drug -> multiple brand prices (SAMPLE data — replace with NPPA/Jan Aushadhi feed)
+const conditionMap = {
+  "Fever / Pain": {
+    generic: "Paracetamol 500mg (10 tabs)",
+    confidence: 91,
+    note: "First-line for mild fever and pain relief.",
+    brands: [
+      {name:"Crocin", company:"GSK", price:16},
+      {name:"Dolo 650", company:"Micro Labs", price:16},
+      {name:"Calpol", company:"GSK", price:14},
+      {name:"Generic Paracetamol (Jan Aushadhi)", company:"PMBJP", price:6},
+    ]
+  },
+  "Hypertension": {
+    generic: "Amlodipine 5mg (10 tabs)",
+    confidence: 87,
+    note: "Commonly used calcium channel blocker for BP control.",
+    brands: [
+      {name:"Amlong", company:"Micro Labs", price:22},
+      {name:"Amlopres", company:"Cipla", price:19},
+      {name:"Stamlo", company:"Dr. Reddy's", price:18},
+      {name:"Generic Amlodipine (Jan Aushadhi)", company:"PMBJP", price:8},
+    ]
+  },
+  "Bacterial Infection": {
+    generic: "Amoxicillin 500mg (10 caps)",
+    confidence: 84,
+    note: "Broad-spectrum antibiotic — verify allergy history first.",
+    brands: [
+      {name:"Mox", company:"Ranbaxy/Sun Pharma", price:45},
+      {name:"Novamox", company:"Cipla", price:42},
+      {name:"Amoxil", company:"GSK", price:55},
+      {name:"Generic Amoxicillin (Jan Aushadhi)", company:"PMBJP", price:20},
+    ]
+  },
+  "Diabetes (Type 2)": {
+    generic: "Metformin 500mg (15 tabs)",
+    confidence: 93,
+    note: "First-line oral therapy for type 2 diabetes.",
+    brands: [
+      {name:"Glycomet", company:"USV", price:20},
+      {name:"Glucophage", company:"Merck", price:38},
+      {name:"Gluformin", company:"Lupin", price:19},
+      {name:"Generic Metformin (Jan Aushadhi)", company:"PMBJP", price:9},
+    ]
+  },
+  "High Cholesterol": {
+    generic: "Atorvastatin 10mg (10 tabs)",
+    confidence: 89,
+    note: "Statin therapy for LDL reduction.",
+    brands: [
+      {name:"Atorva", company:"Zydus", price:45},
+      {name:"Storvas", company:"Sun Pharma", price:60},
+      {name:"Lipicure", company:"Cipla", price:52},
+      {name:"Generic Atorvastatin (Jan Aushadhi)", company:"PMBJP", price:18},
+    ]
+  },
+  "Allergy": {
+    generic: "Cetirizine 10mg (10 tabs)",
+    confidence: 90,
+    note: "Second-generation antihistamine, low sedation.",
+    brands: [
+      {name:"Cetrizine (Cipla)", company:"Cipla", price:12},
+      {name:"Alerid", company:"Cipla", price:14},
+      {name:"Okacet", company:"Cipla", price:16},
+      {name:"Generic Cetirizine (Jan Aushadhi)", company:"PMBJP", price:5},
+    ]
+  }
+};
+
+/* ---------- RENDER: HOME ---------- */
+document.getElementById("recentTable").innerHTML = recent.map(r => `
+  <tr>
+    <td>${r.patient}</td>
+    <td>${r.drug}</td>
+    <td><span class="pill"><span class="dot-status ${r.status}"></span>${statusLabel[r.status]}</span></td>
+    <td>${r.date}</td>
+  </tr>
+`).join("");
+
+document.getElementById("factors").innerHTML = factors.map(f => `
+  <div class="factor">
+    <div class="factor-top"><span>${f.name}</span><span>${f.pct}%</span></div>
+    <div class="bar-bg"><div class="bar-fill" style="width:${f.pct}%"></div></div>
+  </div>
+`).join("");
+
+document.getElementById("lastUpdated").textContent = new Date().toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+
+/* ---------- RENDER: CONDITION CHIPS ---------- */
+let selectedCondition = null;
+const chipRow = document.getElementById("conditionChips");
+chipRow.innerHTML = Object.keys(conditionMap).map(c => `<div class="chip" data-c="${c}">${c}</div>`).join("");
+chipRow.querySelectorAll(".chip").forEach(chip => {
+  chip.addEventListener("click", () => {
+    chipRow.querySelectorAll(".chip").forEach(c => c.classList.remove("selected"));
+    chip.classList.add("selected");
+    selectedCondition = chip.dataset.c;
+  });
+});
+
+/* ---------- PREDICTION LOGIC (mock) ---------- */
+function runPrediction(){
+  const resultDiv = document.getElementById("predictionResult");
+  if(!selectedCondition){
+    resultDiv.innerHTML = `<div class="card" style="border-color:#f3c6c6;background:#fff5f5;color:#a33;">Please select a condition/symptom group above.</div>`;
+    return;
+  }
+  const name = document.getElementById("patientName").value.trim() || "Patient";
+  const data = conditionMap[selectedCondition];
+  const sorted = [...data.brands].sort((a,b) => a.price - b.price);
+  const bestPrice = sorted[0].price;
+
+  const rows = sorted.map(b => `
+    <tr>
+      <td>${b.name}</td>
+      <td>${b.company}</td>
+      <td class="${b.price === bestPrice ? 'best' : ''}">₹${b.price}${b.price === bestPrice ? '<span class="badge-best">BEST PRICE</span>' : ''}</td>
+    </tr>
+  `).join("");
+
+  resultDiv.innerHTML = `
+    <div class="card result-card">
+      <h3 class="card-title">🎯 Suggested Prescription for ${name}</h3>
+      <div class="rx-item">
+        <div class="rx-head"><strong>${data.generic}</strong><span class="conf">${data.confidence}% confidence</span></div>
+        <div class="rx-sub">${data.note} — condition: ${selectedCondition}</div>
+        <table class="price-table">
+          <thead><tr><th>Brand</th><th>Company</th><th>Price</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="disclaimer">ⓘ Prices are sample/reference data for demonstration. Connect a live NPPA/Jan Aushadhi feed for real pricing. Always confirm dosage, contraindications, and allergies before prescribing.</div>
+    </div>
+  `;
+}
+
+/* ---------- NAVIGATION ---------- */
+const titles = {
+  home: ["Welcome, Dr. Harsh Kadam 👋", "Here's what's happening with your system today."],
+  predict: ["New Prediction", "Enter patient symptoms to get AI-suggested medicines and pricing."],
+  history: ["Patient History", "View past patients and predictions."],
+  drugs: ["Drug Database", "Browse drugs, brands, and prices."],
+  research: ["Research Dashboard", "Model performance and dataset insights."],
+  reports: ["Reports", "Generated prescription and analysis reports."],
+  settings: ["Settings", "Manage your account and preferences."],
+  about: ["About Us", "Learn more about GeneRx AI."]
+};
+
+function showView(view){
+  document.querySelectorAll(".nav-btn").forEach(b => b.classList.toggle("active", b.dataset.view === view));
+  document.querySelectorAll(".view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-" + view).classList.add("active");
+  document.getElementById("pageTitle").textContent = titles[view][0];
+  document.getElementById("pageSub").textContent = titles[view][1];
+}
+document.querySelectorAll(".nav-btn").forEach(btn => btn.addEventListener("click", () => showView(btn.dataset.view)));
+</script>
+</body>
+</html>
